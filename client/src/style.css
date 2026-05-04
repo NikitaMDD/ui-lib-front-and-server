@@ -1,0 +1,43 @@
+* {
+    font-family: "Golos Text", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+}
+
+button {
+    border: none;
+    background: none;
+    cursor: pointer;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    margin: 0 0 24px;
+    max-height: 64px;
+}
+
+.field__label {
+    font-size: 14px;
+    line-height: 17px;
+    margin: 0 0 10px;
+    display: flex;
+    align-items: center;
+}
+
+.remove-btn {
+    display: block;
+    color: #2B3033;
+    opacity: .6;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 33px auto 0;
+    transition: opacity .3s ease-in-out;
+    text-align: center;
+}
+
+.remove-btn:hover {
+    opacity: 1;
+}
