@@ -90,11 +90,28 @@ const formFields = ref<FormFields[]>([
 
 const pets = ref<Pet[]>([]);
 
-// Преобразование данных формы на выходе объект для отправки на бэк
-const preparePayload = (formData: PetFormData) => ({
+const parseRuDateToISO = (value: string): string | null => {
+  const dateParts = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!dateParts) return null;
+
+  const [, day, month, year] = dateParts;
+  const parsedDate = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+
+  if (
+      parsedDate.getUTCFullYear() !== Number(year) ||
+      parsedDate.getUTCMonth() !== Number(month) - 1 ||
+      parsedDate.getUTCDate() !== Number(day)
+  ) {
+    return null;
+  }
+
+  return parsedDate.toISOString();
+};
+
+const preparePayload = (formData: PetFormData, dateISO: string) => ({
   name: formData.name,
   type: formData.type,
-  dateOfBirth: new Date(formData.dateOfBirth),
+  dateOfBirth: dateISO,
   presenceOfAStamp: formData.presenceOfAStamp === 'да',
   vaccination: formData.vaccination === 'да',
   treatmentForEctoparasites: formData.treatmentForEctoparasites === 'да',
@@ -148,8 +165,14 @@ const openEditModal = (item: Pet) => {
 const saveData = async () => {
   if (!validateForm()) return;
 
+  const dateISO = parseRuDateToISO(formData.dateOfBirth);
+  if (!dateISO) {
+    formErrors.dateOfBirth = 'Введите дату в формате ДД.ММ.ГГГГ';
+    return;
+  }
+
   try {
-    const payload = preparePayload(formData);
+    const payload = preparePayload(formData, dateISO);
 
     if (currentEditItem.value) {
       const updated = await put<Pet>(`api/pet/${currentEditItem.value._id}`, payload);

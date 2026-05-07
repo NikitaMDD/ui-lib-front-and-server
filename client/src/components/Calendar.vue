@@ -92,10 +92,10 @@ const nextMonth = () => {
   calendarDays.value = generateMonthDays(newDate);
 };
 
-const goToToday = () => {
-  currentMonth.value = new Date();
-  calendarDays.value = generateMonthDays(currentMonth.value);
-};
+// const goToToday = () => {
+//   currentMonth.value = new Date();
+//   calendarDays.value = generateMonthDays(currentMonth.value);
+// };
 
 const isModalOpen = ref(false);
 const selectedDate = ref<Date | null>(null);
