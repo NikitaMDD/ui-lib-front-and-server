@@ -1,3 +1,13 @@
+/** Файл, пришедший с API (поддокумент в Mongo). */
+export interface PetFileApi {
+    _id?: string;
+    url?: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    uploadedAt: string;
+}
+
 export interface Pet {
     _id: string;
     name: string;
@@ -8,7 +18,7 @@ export interface Pet {
     treatmentForEctoparasites: boolean;
     treatmentForHelminths: boolean;
     sterilization: boolean;
-    files?: (File | string)[];
+    files?: PetFileApi[];
 }
 
 export interface PetFormData {
@@ -55,11 +65,21 @@ interface FileFields extends CommonFields {
 
 export type FormFields = InputFields | DropdownFields | DateFields | FileFields;
 
+/** Метаданные файла, уже сохранённые в Mongo — отправлять обратно при PUT без placeholder File. */
+export interface PreservedServerFile {
+    url?: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    uploadedAt: Date | string;
+}
+
 export interface FileWithMeta {
     id: string;
-    date: Date,
+    date: Date;
     customName: string;
     file: File;
+    preservedServerFile?: PreservedServerFile;
 }
 
 export type MaskPattern = 'date' | 'phone' | 'numeric' | RegExp | ((value: string) => string);

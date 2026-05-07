@@ -8,7 +8,7 @@ import ModalWindow from "./UI/ModalWindow.vue";
 import FileLoader from "./UI/FileLoader.vue";
 
 import {computed, onMounted, reactive, ref} from "vue";
-import type {FileWithMeta, FormFields, Pet, PetFormData} from "../types/pets/types.ts";
+import type {FileWithMeta, FormFields, Pet, PetFormData, PetFileApi} from "../types/pets/types.ts";
 import { get } from "../utils/requests/get";
 import { post } from "../utils/requests/post";
 import { put } from "../utils/requests/put";
@@ -90,6 +90,16 @@ const formFields = ref<FormFields[]>([
 
 const pets = ref<Pet[]>([]);
 
+/** ДД.ММ.ГГГГ в ISO (календарная дата в UTC, как в parseRuDateToISO). */
+const formatISOToRuMask = (iso: string): string => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const yyyy = String(d.getUTCFullYear());
+  return `${dd}.${mm}.${yyyy}`;
+};
+
 const parseRuDateToISO = (value: string): string | null => {
   const dateParts = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   if (!dateParts) return null;
@@ -117,13 +127,25 @@ const preparePayload = (formData: PetFormData, dateISO: string) => ({
   treatmentForEctoparasites: formData.treatmentForEctoparasites === 'да',
   treatmentForHelminths: formData.treatmentForHelminths === 'да',
   sterilization: formData.sterilization === 'да',
-  files: formData.files.map(f => ({
-    url: '',
-    fileName: f.file.name,
-    fileSize: f.file.size,
-    mimeType: f.file.type,
-    uploadedAt: new Date(),
-  })),
+  files: formData.files.map((f) => {
+    if (f.preservedServerFile) {
+      const p = f.preservedServerFile;
+      return {
+        url: p.url ?? '',
+        fileName: p.fileName,
+        fileSize: p.fileSize,
+        mimeType: p.mimeType || 'application/octet-stream',
+        uploadedAt: new Date(p.uploadedAt),
+      };
+    }
+    return {
+      url: '',
+      fileName: f.file.name,
+      fileSize: f.file.size,
+      mimeType: f.file.type || 'application/octet-stream',
+      uploadedAt: new Date(),
+    };
+  }),
 });
 
 // Открытие модального окна: создание
@@ -140,17 +162,45 @@ const openCreateModal = () => {
 // Открытие модального окна: редактирование
 const openEditModal = (item: Pet) => {
   currentEditItem.value = item;
-  const existingFiles: FileWithMeta[] = item.files?.map((f, index) => ({
-    id: `existing-${index}`,
-    date: new Date(),
-    customName: f instanceof File ? f.name : 'Документ',
-    file: f instanceof File ? f : new File([], 'placeholder'),
-  })) || [];
+  const rawFiles = item.files ?? [];
+  const existingFiles: FileWithMeta[] = rawFiles.map((f, index) => {
+    if (f && typeof f === 'object' && !(f instanceof File) && 'fileName' in f) {
+      const meta = f as PetFileApi;
+      const mime = meta.mimeType || 'application/octet-stream';
+      return {
+        id: `existing-${index}`,
+        date: new Date(meta.uploadedAt ?? Date.now()),
+        customName: meta.fileName,
+        file: new File([], meta.fileName, { type: mime }),
+        preservedServerFile: {
+          url: meta.url ?? '',
+          fileName: meta.fileName,
+          fileSize: meta.fileSize,
+          mimeType: mime,
+          uploadedAt: meta.uploadedAt ?? new Date().toISOString(),
+        },
+      };
+    }
+    if (f instanceof File) {
+      return {
+        id: `file-${index}`,
+        date: new Date(),
+        customName: f.name,
+        file: f,
+      };
+    }
+    return {
+      id: `legacy-${index}`,
+      date: new Date(),
+      customName: 'Документ',
+      file: new File([], 'document', { type: 'application/octet-stream' }),
+    };
+  });
 
   Object.assign(formData, {
     name: item.name,
     type: item.type,
-    dateOfBirth: item.dateOfBirth,
+    dateOfBirth: formatISOToRuMask(item.dateOfBirth),
     presenceOfAStamp: item.presenceOfAStamp ? 'да' : 'нет',
     vaccination: item.vaccination ? 'да' : 'нет',
     treatmentForEctoparasites: item.treatmentForEctoparasites ? 'да' : 'нет',
