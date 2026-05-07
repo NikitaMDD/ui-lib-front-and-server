@@ -2,48 +2,32 @@
 import Input from "./UI/Input.vue";
 import ModalWindow from "./UI/ModalWindow.vue";
 import Btn from "./UI/Btn.vue";
-import Arrow from "../assets/arrow-btn.svg";
+import CalendarGrid from "./UI/CalendarGrid.vue";
 
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { post } from "../utils/requests/post";
-import type { FormFields, CalendarEntry, CalendarFormData } from "../types/calendar/types.ts";
+import { get } from "../utils/requests/get";
+import type { FormFields, CalendarEntry, CalendarFormData, CalendarGridCell } from "../types/calendar/types.ts";
 
-import SegmentedProgressRing from "./UI/SegmentedProgressRing.vue";
-import { MAX_VALUES, formatDateKey } from "../types/calendar/types.ts";
+import {
+  apiDateToCalendarKey,
+  formatCalendarMonthParam,
+  formatLocalDateKey,
+} from "../types/calendar/types.ts";
 
 const calendarData = ref<Record<string, CalendarEntry>>({});
 
-const getAlcoholProgress = (entry: CalendarEntry): number => {
-  return Math.min((entry.alcohol / MAX_VALUES.alcohol) * 100, 100);
-};
-
-const getCigarettesProgress = (entry: CalendarEntry): number => {
-  return Math.min((entry.cigarettes / MAX_VALUES.cigarettes) * 100, 100);
-};
-
-const getSugarProgress = (entry: CalendarEntry): number => {
-  return Math.min((entry.sugar / MAX_VALUES.sugar) * 100, 100);
-};
-
-const getDayDateKey = (day: number): string => {
-  return formatDateKey(new Date(
-      currentMonth.value.getFullYear(),
-      currentMonth.value.getMonth(),
-      day
-  ));
-};
-
 const currentMonth = ref(new Date());
-const calendarDays = ref<(number | null)[]>([]);
+const calendarDays = ref<CalendarGridCell[]>([]);
 
 const monthTitle = computed(() => {
-  const raw = currentMonth.value.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+  const raw = currentMonth.value.toLocaleDateString('ru-RU', {month: 'long', year: 'numeric'});
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 });
 
-const daysOfWeek = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const daysOfWeek = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
 
-const generateMonthDays = (date: Date) => {
+const generateMonthDays = (date: Date): CalendarGridCell[] => {
   const year = date.getFullYear();
   const month = date.getMonth();
 
@@ -55,25 +39,22 @@ const generateMonthDays = (date: Date) => {
 
   const prevMonthDays = new Date(year, month, 0).getDate();
 
-  const days: (number | null)[] = [];
+  const days: CalendarGridCell[] = [];
 
   for (let i = startDayOfWeek; i > 0; i--) {
-    days.push(prevMonthDays - i + 1);
+    days.push({
+      day: prevMonthDays - i + 1,
+      inCurrentMonth: false,
+    });
   }
 
   for (let i = 1; i <= daysInMonth; i++) {
-    days.push(i);
+    days.push({ day: i, inCurrentMonth: true });
   }
 
   while (days.length % 7 !== 0) {
     days.push(null);
   }
-
-  /*
-  while (days.length < 42) {
-    days.push(null);
-  }
-  */
 
   return days;
 };
@@ -82,27 +63,24 @@ const prevMonth = () => {
   const newDate = new Date(currentMonth.value);
   newDate.setMonth(newDate.getMonth() - 1);
   currentMonth.value = newDate;
-  calendarDays.value = generateMonthDays(newDate);
 };
 
 const nextMonth = () => {
   const newDate = new Date(currentMonth.value);
   newDate.setMonth(newDate.getMonth() + 1);
   currentMonth.value = newDate;
-  calendarDays.value = generateMonthDays(newDate);
 };
-
-// const goToToday = () => {
-//   currentMonth.value = new Date();
-//   calendarDays.value = generateMonthDays(currentMonth.value);
-// };
 
 const isModalOpen = ref(false);
 const selectedDate = ref<Date | null>(null);
 
 const choosenDay = computed(() =>
     selectedDate.value
-        ? selectedDate.value.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+        ? selectedDate.value.toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric'
+        })
         : ''
 );
 
@@ -161,17 +139,27 @@ const clearError = (key: string) => {
   if (formErrors[key]) delete formErrors[key];
 };
 
-const openDayModal = (day: number | null) => {
-  if (!day) return;
-
+const openDayModal = (day: number) => {
   selectedDate.value = new Date(
       currentMonth.value.getFullYear(),
       currentMonth.value.getMonth(),
       day
   );
 
-  Object.assign(formData, { alcohol: '', cigarettes: '', sugar: '' });
-  Object.keys(formErrors).forEach(key => delete formErrors[key]);
+  const key = formatLocalDateKey(selectedDate.value);
+  const existing = calendarData.value[key];
+
+  Object.keys(formErrors).forEach(errKey => delete formErrors[errKey]);
+
+  if (existing) {
+    Object.assign(formData, {
+      alcohol: String(existing.alcohol),
+      cigarettes: String(existing.cigarettes),
+      sugar: String(existing.sugar),
+    });
+  } else {
+    Object.assign(formData, {alcohol: '', cigarettes: '', sugar: ''});
+  }
 
   isModalOpen.value = true;
 };
@@ -181,20 +169,20 @@ const saveData = async () => {
 
   try {
     const payload: CalendarEntry = {
-      date: selectedDate.value.toISOString(),
+      date: formatLocalDateKey(selectedDate.value),
       alcohol: Number(formData.alcohol) || 0,
       cigarettes: Number(formData.cigarettes) || 0,
       sugar: Number(formData.sugar) || 0,
     };
 
-    await post<CalendarEntry>('api/calendar', payload);
+    const saved = await post<CalendarEntry>('api/calendar', payload);
+    if (!saved) {
+      console.error('Save failed');
+      return;
+    }
 
-    const dateKey = formatDateKey(selectedDate.value);
-    calendarData.value[dateKey] = payload;
-
-    console.log('Сохраняю ключ:', dateKey);
-    console.log('calendarData:', calendarData.value);
-
+    const dateKey = apiDateToCalendarKey(saved.date);
+    calendarData.value = {...calendarData.value, [dateKey]: {...saved, date: typeof saved.date === 'string' ? saved.date : String(saved.date)}};
     isModalOpen.value = false;
   } catch (e) {
     console.error('Save failed:', e);
@@ -202,79 +190,42 @@ const saveData = async () => {
 };
 
 const loadCalendarData = async () => {
-  try {
-    const response = await fetch('/api/calendar?month=' + currentMonth.value.toISOString().slice(0, 7));
-    const entries: CalendarEntry[] = await response.json();
-
-    entries.forEach(entry => {
-      const dateKey = formatDateKey(new Date(entry.date));
-      calendarData.value[dateKey] = entry;
-    });
-  } catch (e) {
-    console.error('Load failed:', e);
+  const monthStr = formatCalendarMonthParam(currentMonth.value);
+  const entries = await get<CalendarEntry[]>(`api/calendar?month=${monthStr}`);
+  const nextMap: Record<string, CalendarEntry> = {};
+  if (entries?.length) {
+    for (const entry of entries) {
+      const dateKey = apiDateToCalendarKey(entry.date);
+      if (dateKey) nextMap[dateKey] = entry;
+    }
   }
+  calendarData.value = nextMap;
 };
 
-onMounted(() => {
-  calendarDays.value = generateMonthDays(currentMonth.value);
-  loadCalendarData();
-});
+watch(
+    currentMonth,
+    async () => {
+      calendarDays.value = generateMonthDays(currentMonth.value);
+      await loadCalendarData();
+    },
+    {immediate: true}
+);
 </script>
 
 <template>
-  <div class="calendar">
-    <div class="calendar__header">
-      <Btn
-          class="calendar__nav-btn"
-          @click="prevMonth"
-      >
-        <img :src="Arrow" alt="Назад">
-      </Btn>
+  <div class="calendar-container">
+    <p class="title">Трекер вредных привычек уровень «Стандарт»</p>
 
-      <span class="calendar__month-title">
-        {{ monthTitle }}
-      </span>
-
-      <Btn
-          class="calendar__nav-btn"
-          @click="nextMonth"
-      >
-        <img :src="Arrow" alt="Вперёд" class="calendar__arrow-flipped" :style="'margin: 0 auto 1px;'">
-      </Btn>
-    </div>
-
-    <div class="calendar__main">
-      <div class="calendar__week-days">
-        <div v-for="day in daysOfWeek" :key="day" class="calendar__day-name">
-          {{ day }}
-        </div>
-      </div>
-
-      <div class="calendar__dates">
-        <div
-            v-for="(day, index) in calendarDays"
-            :key="index"
-            class="calendar__date-cell"
-            :class="{ 'calendar__date-cell--empty': day === null }"
-            @click="openDayModal(day)"
-        >
-          <div class="calendar__date-content">
-            <span class="calendar__date-number">{{ day }}</span>
-
-            <SegmentedProgressRing
-                v-if="day && calendarData[getDayDateKey(day)]"
-                :alcohol-progress="getAlcoholProgress(calendarData[getDayDateKey(day)]!)"
-                :cigarettes-progress="getCigarettesProgress(calendarData[getDayDateKey(day)]!)"
-                :sugar-progress="getSugarProgress(calendarData[getDayDateKey(day)]!)"
-                :size="40"
-                :stroke-width="3"
-                :duration="0.5"
-                class="calendar__progress-ring"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+    <CalendarGrid
+        :month-title="monthTitle"
+        :week-day-labels="daysOfWeek"
+        :calendar-days="calendarDays"
+        :calendar-data="calendarData"
+        :month-anchor="currentMonth"
+        @prev="prevMonth"
+        @next="nextMonth"
+        @select-day="openDayModal"
+    />
   </div>
 
   <ModalWindow :title="choosenDay" v-model="isModalOpen">
@@ -298,220 +249,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.calendar {
-  padding: 16px;
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.calendar__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  padding: 0 8px;
-}
-
-.calendar__nav-btn {
-  width: 39px;
-  height: 39px;
-  padding: 0;
-  border-radius: 4px;
-}
-
-.calendar__nav-btn img {
-  width: 10px;
-  height: 10px;
-  display: block;
-  margin: 0 auto;
-}
-
-.calendar__arrow-flipped {
-  transform: rotate(-180deg);
-}
-
-.calendar__month-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  text-transform: none;
-  user-select: none;
-}
-
-/* --- Сетка календаря --- */
-.calendar__main {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.calendar__week-days,
-.calendar__dates {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
-}
-
-.calendar__week-days {
-  padding: 4px 2px;
-}
-
-.calendar__day-name {
-  text-align: center;
-  font-size: 13px;
-  color: #888;
-  font-weight: 500;
-  line-height: 1;
-  padding: 8px 0;
-  user-select: none;
-}
-
-.calendar__dates {
-  padding: 0 2px;
-}
-
-/* Ячейка даты — контейнер */
-.calendar__date-cell {
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  border-radius: 4px;
-  transition: background 0.15s ease;
-}
-
-.calendar__date-cell:hover {
-  background: #f9fafb;
-}
-
-.calendar__date-cell--empty {
-  cursor: default;
-  pointer-events: none;
-}
-
-.calendar__date-content {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-
-.calendar__date-number {
-  position: relative;
-  z-index: 2;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.calendar__progress-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 0;
-  pointer-events: none;
-}
-
-.calendar__date-cell--has-data .calendar__date-number {
-  font-weight: 500;
-  color: #1f2937;
-}
-
-/* Адаптив */
-@media (max-width: 480px) {
-  .calendar {
-    padding: 12px;
-  }
-
-  .calendar__date-cell {
-    height: 36px;
-  }
-
-  .calendar__date-number {
-    font-size: 13px;
-  }
-
-  .calendar__day-name {
-    font-size: 12px;
-    padding: 6px 0;
-  }
-
-  .calendar__nav-btn {
-    width: 36px;
-    height: 36px;
-  }
-
-  .calendar__month-title {
-    font-size: 15px;
-  }
-}
-
-.calendar__date-cell--today {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-}
-
-.calendar__date-cell--today .calendar__date-number {
-  color: #2563eb;
-  font-weight: 600;
-}
-
-.calendar__date-cell--has-data:hover .calendar__progress-ring {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.05);
-  transition: transform 0.2s ease, opacity 0.2s ease;
-}
-
-.calendar__progress-ring {
-  opacity: 0.9;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.calendar * {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
-.calendar__nav-btn:active {
-  transform: scale(0.98);
-}
-
-@keyframes ringFadeIn {
-  to {
-    opacity: 1;
-  }
-}
-
-.calendar__date-cell:hover .calendar__progress-ring {
-  transform: translate(-50%, -50%) scale(1.1);
-  transition: transform 0.3s ease-in-out;
-}
-
-@keyframes ringAppear {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-.calendar__progress-ring {
-  animation: ringAppear 0.3s ease-in-out forwards;
+.calendar-container {
+  width: 768px;
+  margin: 47px auto;
+  box-sizing: border-box;
 }
 </style>

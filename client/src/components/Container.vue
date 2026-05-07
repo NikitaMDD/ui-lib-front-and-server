@@ -276,7 +276,13 @@ onMounted(() => {
 </script>
 
 <template>
-  <Table :items="pets" @click="openEditModal"/>
+
+  <div class="container">
+    <p class="title">Список питомцев</p>
+    <Table :items="pets" @click="openEditModal"/>
+
+    <Btn :disabled="false" :style="'margin: 20px 0 0;'" @click="openCreateModal">Добавить питомца</Btn>
+  </div>
 
   <ModalWindow :title="modalTitle" v-model="isModalOpen">
     <div v-for="field in formFields" :key="field.key">
@@ -333,8 +339,11 @@ onMounted(() => {
     </div>
   </ModalWindow>
 
-  <Btn :disabled="false" :style="'margin: 20px 0 0;'" @click="openCreateModal">Добавить питомца</Btn>
 </template>
 
 <style scoped>
+  .container {
+    width: 768px;
+    margin: 144px auto;
+  }
 </style>

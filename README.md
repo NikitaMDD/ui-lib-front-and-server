@@ -23,7 +23,7 @@ flowchart LR
 
 - **Клиент**: одностраничное приложение (SPA), маршрутизация на стороне браузера (`vue-router`).
 - **Сервер**: REST API под префиксом `/api`, данные в MongoDB через Mongoose.
-- **nginx**: раздаёт статику из `client/dist` и для любых путей SPA отдаёт `index.html` (чтобы при обновлении страницы на `/pets` не было 404).
+- **nginx**: раздаёт статику из `client/dist`, пробрасывает **`/api/`** на бэкенд, для остальных путей SPA отдаёт `index.html` (чтобы при обновлении `/pets`, `/calendar` не было 404).
 
 ---
 
@@ -52,7 +52,7 @@ flowchart LR
 | `index.html` | Точка входа Vite, подключение `main.ts`. |
 | **Docker** |
 | `Dockerfile` | Многостадийная сборка: `npm install` → `npm run build` → образ **nginx** со статикой. |
-| `nginx/default.conf` | Конфиг nginx: `try_files` для корректной работы SPA при прямых URL и обновлении страницы. |
+| `nginx/default.conf` | SPA `try_files` и проброс **`/api/`** на контейнер `server:3000` в Compose. |
 | `.dockerignore` | Что не копировать в контекст сборки Docker. |
 | **Публичные файлы** |
 | `public/` | Статика без обработки Vite (favicon, svg и т.д.), попадает в корень `dist`. |
@@ -61,8 +61,8 @@ flowchart LR
 | `src/App.vue` | Корневой layout / оболочка приложения. |
 | `src/style.css` | Глобальные стили. |
 | `src/router/index.ts` | Маршруты (`/`, `/pets`, `/calendar`), `createWebHistory`. |
-| `src/components/` | Страничные и составные компоненты. Например `Container.vue` (питомцы), `Calendar.vue` (календарь). |
-| `src/components/UI/` | Переиспользуемые UI-компоненты: кнопки, инпуты, таблица, модалка и др. |
+| `src/components/` | Страничные компоненты (`Container.vue`, `Calendar.vue`). |
+| `src/components/UI/` | Переиспользуемый UI, в т.ч. `CalendarGrid.vue` (сетка календаря), кнопки, инпуты, `SegmentedProgressRing`, модалки. |
 | `src/types/` | TypeScript-типы и константы по доменам (`pets`, `calendar`). |
 | `src/utils/requests/` | Обёртки `fetch` для GET/POST/PUT/DELETE к API (в коде задан базовый URL бэкенда). |
 | `src/directives/` | Директивы Vue (например маска ввода для полей даты/телефона). |
@@ -83,10 +83,10 @@ Backend на **Express + Mongoose (MongoDB)**.
 | `.dockerignore` | Исключения для контекста сборки. |
 | **Исходники `src/`** |
 | `src/app.ts` | Создание Express-приложения, CORS, `express.json()`, монтирование роутера на `/api`, подключение к MongoDB, `listen`. |
-| `src/routers/router.ts` | Маршруты: `/pets`, `/pet`, `/pet/:id` (GET/POST/PUT/DELETE). |
+| `src/routers/router.ts` | Маршруты: питомцы (`/pets`, `/pet`…), календарь (`/calendar`). |
 | `src/controllers/` | Обработчики HTTP: получение тела запроса и вызов сервисов. |
 | `src/services/` | Бизнес-логика и работа с моделями Mongoose. |
-| `src/schemas/` | Схемы и модели Mongoose (например карточка питомца, вложенные файлы). |
+| `src/schemas/` | Схемы и модели Mongoose: питомцы, календарь привычек. |
 
 Паттерн **controller → service → schema/model** упрощает тестирование и изменение хранения данных.
 
@@ -149,7 +149,7 @@ npm install
 npm run dev
 ```
 
-Vite по умолчанию поднимет dev-сервер (часто `http://localhost:5173`). В коде запросов указан адрес бэкенда — при локальной разработке убедитесь, что он совпадает с тем, где слушает Express (см. `client/src/utils/requests/*.ts`).
+Vite по умолчанию поднимет dev-сервер (часто `http://localhost:5173`). Для календаря и при необходимости других страниц включён proxy: запросы с dev-сервера на `/api/**` пробрасываются на Express (`localhost:3000`). Запросы из браузера в `utils/requests` всё так же могут ходить на `http://localhost:3000` напрямую (как у питомцев).
 
 Сборка клиента для проверки production-артефакта:
 
@@ -170,3 +170,5 @@ npm run build   # результат в client/dist
 | POST | `/api/pet` | Создание |
 | PUT | `/api/pet/:id` | Обновление |
 | DELETE | `/api/pet/:id` | Удаление |
+| GET | `/api/calendar?month=YYYY-MM` | Записи календаря привычек за месяц |
+| POST | `/api/calendar` | Создание или обновление записи по дню (`date`, `alcohol`, `cigarettes`, `sugar`) |
