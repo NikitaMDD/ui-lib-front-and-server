@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const MainView = () => import('../App.vue')
-const PetsView = () => import('../components/Container.vue')
-const CalendarView = () => import('../components/Calendar.vue')
+const PetsView = () => import('../components/views/Pets.vue')
+const CalendarView = () => import('../components/views/Calendar.vue')
 
 const routes = [
     { path: '/', name: 'Main', component: MainView },

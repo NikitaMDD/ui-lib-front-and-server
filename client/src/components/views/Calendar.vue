@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import Input from "./UI/Input.vue";
-import ModalWindow from "./UI/ModalWindow.vue";
-import Btn from "./UI/Btn.vue";
-import CalendarGrid from "./UI/CalendarGrid.vue";
+import Input from "../UI/base/Input.vue";
+import ModalWindow from "../UI/base/ModalWindow.vue";
+import Btn from "../UI/base/Btn.vue";
+import CalendarGrid from "../UI/calendar/CalendarGrid.vue";
 
 import { computed, reactive, ref, watch } from "vue";
-import { post } from "../utils/requests/post";
-import { get } from "../utils/requests/get";
-import type { FormFields, CalendarEntry, CalendarFormData, CalendarGridCell } from "../types/calendar/types.ts";
+import { post } from "../../utils/requests/post.ts";
+import { get } from "../../utils/requests/get.ts";
+import type { FormFields, CalendarEntry, CalendarFormData, CalendarGridCell } from "../../types/calendar/types.ts";
 
 import {
   apiDateToCalendarKey,
   formatCalendarMonthParam,
   formatLocalDateKey,
-} from "../types/calendar/types.ts";
+} from "../../types/calendar/types.ts";
 
 const calendarData = ref<Record<string, CalendarEntry>>({});
 

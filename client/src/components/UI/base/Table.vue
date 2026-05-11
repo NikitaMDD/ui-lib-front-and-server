@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 import arrow from '@/assets/arrow.svg';
-import type {Pet} from "../../types/pets/types.ts";
+import type {Pet} from "../../../types/pets/types.ts";
 
 interface TableProps {
   className?: string;

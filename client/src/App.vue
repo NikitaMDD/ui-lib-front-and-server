@@ -2,7 +2,7 @@
 
 import {computed, onMounted} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Btn from "./components/UI/Btn.vue";
+import Btn from "./components/UI/base/Btn.vue";
 import BackArrow from "./assets/arrow-btn.svg"
 
 const route = useRoute();

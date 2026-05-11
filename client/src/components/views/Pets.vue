@@ -1,18 +1,18 @@
 <script setup lang="ts">
 
-import Btn from "./UI/Btn.vue";
-import Table from "./UI/Table.vue";
-import Input from "./UI/Input.vue";
-import Dropdown from "./UI/Dropdown.vue";
-import ModalWindow from "./UI/ModalWindow.vue";
-import FileLoader from "./UI/FileLoader.vue";
+import Btn from "../UI/base/Btn.vue";
+import Table from "../UI/base/Table.vue";
+import Input from "../UI/base/Input.vue";
+import Dropdown from "../UI/base/Dropdown.vue";
+import ModalWindow from "../UI/base/ModalWindow.vue";
+import FileLoader from "../UI/base/FileLoader.vue";
 
 import {computed, onMounted, reactive, ref} from "vue";
-import type {FileWithMeta, FormFields, Pet, PetFormData, PetFileApi} from "../types/pets/types.ts";
-import { get } from "../utils/requests/get";
-import { post } from "../utils/requests/post";
-import { put } from "../utils/requests/put";
-import { deleteRequest } from "../utils/requests/delete";
+import type {FileWithMeta, FormFields, Pet, PetFormData, PetFileApi} from "../../types/pets/types.ts";
+import { get } from "../../utils/requests/get.ts";
+import { post } from "../../utils/requests/post.ts";
+import { put } from "../../utils/requests/put.ts";
+import { deleteRequest } from "../../utils/requests/delete.ts";
 
 const isModalOpen = ref(false);
 const currentEditItem = ref<Pet | null>(null);
@@ -31,7 +31,6 @@ const formData = reactive<PetFormData>({
 
 const formErrors = reactive<Record<string, string>>({});
 
-// Валидация формы
 const validateForm = (): boolean => {
   Object.keys(formErrors).forEach(key => delete formErrors[key]);
   let isValid = true;
@@ -90,7 +89,6 @@ const formFields = ref<FormFields[]>([
 
 const pets = ref<Pet[]>([]);
 
-/** ДД.ММ.ГГГГ в ISO (календарная дата в UTC, как в parseRuDateToISO). */
 const formatISOToRuMask = (iso: string): string => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';
@@ -211,7 +209,6 @@ const openEditModal = (item: Pet) => {
   isModalOpen.value = true;
 };
 
-// Сохранение: создание или обновление
 const saveData = async () => {
   if (!validateForm()) return;
 
@@ -240,7 +237,6 @@ const saveData = async () => {
   }
 };
 
-// Удаление
 const handleDelete = async () => {
   if (!currentEditItem.value?._id) return;
 
@@ -255,7 +251,6 @@ const handleDelete = async () => {
   }
 };
 
-// Загрузка списка питомцев
 const loadPets = async () => {
   const data = await get<Pet[]>('api/pets');
   if (data) pets.value = data;
