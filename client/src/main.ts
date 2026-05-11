@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import './style.css'
 import { vMask } from './directives/mask';
 import App from './App.vue'
-import router from './router'
+import router from './router/createRouter'
 
 const app = createApp(App);
 app.directive('mask', vMask);

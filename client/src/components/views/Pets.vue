@@ -56,7 +56,6 @@ const clearError = (key: string) => {
   if (formErrors[key]) delete formErrors[key];
 };
 
-// Поля формы
 const formFields = ref<FormFields[]>([
   { label: 'Кличка', key: 'name', type: 'input', placeholder: '', required: true },
   {
@@ -146,7 +145,6 @@ const preparePayload = (formData: PetFormData, dateISO: string) => ({
   }),
 });
 
-// Открытие модального окна: создание
 const openCreateModal = () => {
   currentEditItem.value = null;
   Object.assign(formData, {
@@ -157,7 +155,6 @@ const openCreateModal = () => {
   isModalOpen.value = true;
 };
 
-// Открытие модального окна: редактирование
 const openEditModal = (item: Pet) => {
   currentEditItem.value = item;
   const rawFiles = item.files ?? [];

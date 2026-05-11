@@ -3,7 +3,7 @@ import Btn from "../base/Btn.vue";
 import SegmentedProgressRing from "./SegmentedProgressRing.vue";
 import type { CalendarEntry, CalendarGridCell } from "../../../types/calendar/types.ts";
 import { MAX_VALUES, formatCalendarDayKey } from "../../../types/calendar/types.ts";
-import Arrow from "../../assets/arrow-btn.svg";
+import Arrow from "../../../assets/arrow-btn.svg";
 
 const props = defineProps<{
   monthTitle: string;
