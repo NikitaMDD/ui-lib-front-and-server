@@ -10,12 +10,14 @@ interface InputProps {
   error?: string;
   mark?: 'red' | 'blue' | 'yellow';
   mask?: 'date' | 'phone' | 'numeric' | RegExp | ((value: string) => string);
+  maxlength?: number;
 }
 
 const props = defineProps<InputProps>();
 
 const emit = defineEmits<{
   'update:modelValue': [value: string];
+  'keydown': [event: KeyboardEvent]
 }>();
 
 const handleInput = (event: Event) => {
@@ -57,6 +59,8 @@ const handleInput = (event: Event) => {
       :value="props.modelValue"
       @input="handleInput"
       v-mask="props.mask"
+      :maxlength="props.maxlength"
+      @keydown="$emit('keydown', $event)"
     />
     <div v-if="props.error" class="field__error-message">
       {{ props.error }}

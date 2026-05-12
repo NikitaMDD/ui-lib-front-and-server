@@ -16,7 +16,6 @@ const isWaitingCode = ref(false);
 </script>
 
 <template>
-
     <div class="container">
         <p class="title">Страница входа для сотрудника</p>
         <div class="login-form">
