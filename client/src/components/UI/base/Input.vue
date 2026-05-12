@@ -1,7 +1,7 @@
 <script setup lang="ts">
 
 interface InputProps {
-  title: string;
+  tittle?: string;
   modelValue: string;
   className?: string;
   // style?: string;
@@ -37,7 +37,7 @@ const handleInput = (event: Event) => {
       :class="{
         'field__label--required': props.error,
       }"
-      :for="`id_${props.title}`"
+      :for="`id_${props.tittle}`"
     >
       <span
         v-if="props.mark"
@@ -45,7 +45,7 @@ const handleInput = (event: Event) => {
          ['field__label-mark', `field__label-mark--${props.mark}`]
         "
       ></span>
-      {{props.title}}
+      {{props.tittle}}
 <!--      <span v-if="props.required">*</span>-->
     </label>
     <input
@@ -53,7 +53,7 @@ const handleInput = (event: Event) => {
       :class="{
         'field__input--required': props.error,
       }"
-      :id="`id_${props.title}`"
+      :id="`id_${props.tittle}`"
       :value="props.modelValue"
       @input="handleInput"
       v-mask="props.mask"
