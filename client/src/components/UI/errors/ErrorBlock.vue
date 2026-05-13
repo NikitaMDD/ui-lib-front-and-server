@@ -25,6 +25,7 @@ const props = defineProps<ErrorBlockProps>();
         align-items: center;
         width: 100%;
         border-radius: 8px;
+        box-sizing: border-box;
     }
     img {
         margin: 0 9px 0 0;

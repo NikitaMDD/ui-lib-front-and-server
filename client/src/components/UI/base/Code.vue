@@ -3,7 +3,7 @@ import Input from './Input.vue';
 import { nextTick, watch, computed, onMounted, onUnmounted, ref } from 'vue';
 
 interface CodeProps {
-    tittle?: string;
+    title?: string;
     modelValue: string;
     time: number;
 }
@@ -109,27 +109,29 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <p class="tittle">{{ props.tittle }}</p>
-    <div class="code">
-        <Input 
-            v-for="(_, index) in digits"
-            :key="index"
-            :ref="(el) => setInputRef(el as InstanceType<typeof Input> | null, index)"
-            class="code__inputs"
-            :modelValue="digits[index]"
-            mask="numeric"
-            :maxlength="1"
-            @update:modelValue="(v) => onCellUpdate(index, v)"
-            @keydown="(e) => onCellKeydown(index, e)"
-        />
+    <div class="code-wrapper">
+        <p class="title">{{ props.title }}</p>
+        <div class="code">
+            <Input 
+                v-for="(_, index) in digits"
+                :key="index"
+                :ref="(el) => setInputRef(el as InstanceType<typeof Input> | null, index)"
+                class="code__inputs"
+                :modelValue="digits[index]"
+                mask="numeric"
+                :maxlength="1"
+                @update:modelValue="(v) => onCellUpdate(index, v)"
+                @keydown="(e) => onCellKeydown(index, e)"
+            />
+        </div>
+        <div class="code__timer" v-if="timeLeft > 0">Отправить код можно через {{ timeLeftFormatted }}</div>
+        <div class="code__resend" v-else @click="startTimer">Отправить код повторно</div>
     </div>
-    <div class="code__timer" v-if="timeLeft > 0">Отправить код можно через {{ timeLeftFormatted }}</div>
-    <div class="code__resend" v-else @click="startTimer">Отправить код повторно</div>
 </template>
 
 <style scoped>
 
-.tittle {
+.title {
     font-size: 14px;
     font-weight: 400;
     line-height: 33px;
@@ -151,7 +153,7 @@ onUnmounted(() => {
     width: 43px;
     height: 55px;
     box-sizing: border-box;
-    padding: 0 14px;
+    padding: 0 12px;
     color: #2B3033;
     font-size: 30px;
 }

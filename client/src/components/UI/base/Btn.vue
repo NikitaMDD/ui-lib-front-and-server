@@ -47,4 +47,9 @@
     background: #eaeaeb;
   }
 
+  .btn:disabled {
+    background-color: rgba(211, 217, 215, 1);
+    cursor: not-allowed;
+  }
+
 </style>
