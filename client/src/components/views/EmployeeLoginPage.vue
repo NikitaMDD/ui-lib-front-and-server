@@ -19,8 +19,8 @@ const isWaitingCode = ref(false);
     <div class="container">
         <p class="title">Страница входа для сотрудника</p>
         <div class="login-form">
-            <Input tittle="Логин" :modelValue="login"/>
-            <Input tittle="Пароль" :modelValue="password"/>
+            <Input title="Логин" v-model="login"/>
+            <Input title="Пароль" v-model="password" type="password"/>
 
             <ErrorBlock error="Error message"/>
 

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 
+import eyeClosed from '../../../assets/eyeClosed.svg';
+import { ref, nextTick } from 'vue';
+
 interface InputProps {
-  tittle?: string;
+  title?: string;
   modelValue: string;
   className?: string;
   // style?: string;
@@ -11,9 +14,12 @@ interface InputProps {
   mark?: 'red' | 'blue' | 'yellow';
   mask?: 'date' | 'phone' | 'numeric' | RegExp | ((value: string) => string);
   maxlength?: number;
+  type?: 'text' | 'password' | 'email' | 'tel' | 'number';
 }
 
 const props = defineProps<InputProps>();
+const inputType = ref<string | undefined>(props.type);
+const inputRef = ref<HTMLInputElement>();
 
 const emit = defineEmits<{
   'update:modelValue': [value: string];
@@ -30,6 +36,11 @@ const handleInput = (event: Event) => {
   emit('update:modelValue', target.value);
 };
 
+const togglePasswordVisibility = () => {
+  inputType.value = inputType.value === 'password' ? 'text' : 'password';
+  nextTick(() => inputRef.value?.focus());
+}
+
 </script>
 
 <template>
@@ -39,7 +50,7 @@ const handleInput = (event: Event) => {
       :class="{
         'field__label--required': props.error,
       }"
-      :for="`id_${props.tittle}`"
+      :for="`id_${props.title}`"
     >
       <span
         v-if="props.mark"
@@ -47,21 +58,25 @@ const handleInput = (event: Event) => {
          ['field__label-mark', `field__label-mark--${props.mark}`]
         "
       ></span>
-      {{props.tittle}}
-<!--      <span v-if="props.required">*</span>-->
+      {{props.title}}
     </label>
-    <input
-      class="field__input"
-      :class="{
-        'field__input--required': props.error,
-      }"
-      :id="`id_${props.tittle}`"
-      :value="props.modelValue"
-      @input="handleInput"
-      v-mask="props.mask"
-      :maxlength="props.maxlength"
-      @keydown="$emit('keydown', $event)"
-    />
+    <div class="field__container">
+      <input
+        ref="inputRef"
+        class="field__input"
+        :class="{
+          'field__input--required': props.error,
+        }"
+        :id="`id_${props.title}`"
+        :value="props.modelValue"
+        @input="handleInput"
+        v-mask="props.mask"
+        :maxlength="props.maxlength"
+        :type="inputType"
+        @keydown="$emit('keydown', $event)"
+      />
+      <img v-if="props.type === 'password'" class="field__eye-icon" :src="eyeClosed" alt="" @click="togglePasswordVisibility">
+    </div>
     <div v-if="props.error" class="field__error-message">
       {{ props.error }}
     </div>
@@ -70,8 +85,13 @@ const handleInput = (event: Event) => {
 
 <style scoped>
 
-  .field__input {
+  .field__container {
+    position: relative;
     max-width: 100%;
+  }
+
+  .field__input {
+    width: 100%;
     border-radius: 8px;
     border: 1px solid #d6d7d8;
     background-color: #eaeaeb;
@@ -82,6 +102,7 @@ const handleInput = (event: Event) => {
     font-weight: 400;
     outline: none;
     transition: border-color 0.3s ease-in-out;
+    box-sizing: border-box;
   }
 
   .field__input:focus {
@@ -118,6 +139,13 @@ const handleInput = (event: Event) => {
 
   .field__label-mark--blue {
     background-color: rgba(0, 122, 255, 1);
+  }
+
+  .field__eye-icon {
+    position: absolute;
+    top: 40%;
+    right: 13px;
+    cursor: pointer;
   }
 
 </style>
