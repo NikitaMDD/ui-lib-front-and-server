@@ -13,15 +13,6 @@ app.use(cors({
 app.use(express.json());
 app.use('/api', router);
 
-/*
-* TODO list
-*
-* 1. развернуть на докере монго базу
-* 2. запустить проект
-* 3. тестировать
-*
-* */
-
 const PORT = process.env.PORT;
 const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/mydatabase';
 
