@@ -1,6 +1,8 @@
+import { apiUrl } from "./apiUrl";
+
 export async function post<T>(endpoint: string, body: unknown): Promise<T | null> {
     try {
-        const response = await fetch(`http://localhost:3000/${endpoint}`, {
+        const response = await fetch(apiUrl(endpoint), {
             method: "POST",
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(body),

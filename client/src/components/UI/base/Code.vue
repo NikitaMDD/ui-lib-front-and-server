@@ -12,6 +12,7 @@ const props = defineProps<CodeProps>();
 
 const emit = defineEmits<{
     'update:modelValue': [value: string];
+    'resend': [];
 }>();
 
 const digits = ref<string[]>(['', '', '', '']);
@@ -125,7 +126,7 @@ onUnmounted(() => {
             />
         </div>
         <div class="code__timer" v-if="timeLeft > 0">Отправить код можно через {{ timeLeftFormatted }}</div>
-        <div class="code__resend" v-else @click="startTimer">Отправить код повторно</div>
+        <div class="code__resend" v-else @click="emit('resend')">Отправить код повторно</div>
     </div>
 </template>
 

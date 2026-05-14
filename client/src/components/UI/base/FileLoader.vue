@@ -5,7 +5,7 @@ import {ref, watch} from "vue";
 import plus from '@/assets/plus.svg';
 import fileLogo from '@/assets/file-logo.svg';
 import deleteIcon from '@/assets/delete-icon.svg';
-import type {FileWithMeta} from "../../types/pets/types.ts";
+import type {FileWithMeta} from "../../../types/pets/types.ts";
 
 interface FileLoaderProps {
   title: string;

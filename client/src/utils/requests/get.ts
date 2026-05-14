@@ -1,6 +1,8 @@
+import { apiUrl } from "./apiUrl";
+
 export async function get<T>(endpoint: string): Promise<T | null> {
     try {
-        const response = await fetch(`http://localhost:3000/${endpoint}`);
+        const response = await fetch(apiUrl(endpoint));
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return await response.json() as T;
     } catch (e) {

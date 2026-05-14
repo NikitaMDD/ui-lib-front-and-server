@@ -15,11 +15,17 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
-    "mongoose": "^9.3.3"
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.3.3",
+    "nodemailer": "^7.0.3"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/nodemailer": "^6.4.17",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.96",

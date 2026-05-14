@@ -6,7 +6,16 @@ import router from "./routers/router";
 const app = express();
 
 app.use(cors({
-    origin: ['http://localhost', 'http://localhost:80', 'http://127.0.0.1'],
+    origin: [
+        'http://localhost',
+        'http://localhost:80',
+        'http://127.0.0.1',
+        'http://localhost:8080',
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:8080',
+        'http://127.0.0.1:5173',
+    ],
     credentials: true,
 }));
 
