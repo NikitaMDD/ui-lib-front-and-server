@@ -22,6 +22,11 @@ const isWaitingCode = ref(false);
 const errorMessage = ref<string | null>(null);
 const isLoading = ref(false);
 
+const loginError = ref<boolean>(false);
+const passwordError = ref<boolean>(false);
+
+const codeComponentKey = ref(0);
+
 const isDisabled = computed(() => {
     if (isLoading.value) return true;
     
@@ -33,8 +38,14 @@ const isDisabled = computed(() => {
 
 const showError = computed(() => !!errorMessage.value);
 
+const clearFieldErrors = () => {
+    loginError.value = false;
+    passwordError.value = false;
+};
+
 const handleSubmit = async () => {
     errorMessage.value = null;
+    clearFieldErrors();
     isLoading.value = true;
 
     try {
@@ -44,9 +55,14 @@ const handleSubmit = async () => {
                 password: password.value
             } as LoginRequest);
 
-            isWaitingCode.value = true;
+            if (response === null) {
+                loginError.value = true;
+                passwordError.value = true;
+                errorMessage.value = 'Неверный логин или пароль';
+                return;
+            }
 
-            console.log('response when waitingCode is false', response)
+            isWaitingCode.value = true;
             
         } else {
             const response = await post<VerifyCodeResponse>('login/verify', {
@@ -54,14 +70,18 @@ const handleSubmit = async () => {
                 code: code.value
             } as VerifyCodeRequest);
 
-            if (response) {
-                localStorage.setItem('authToken', response.token);
+            if (response === null) {
+                errorMessage.value = 'Неверный или истекший код';
+                code.value = '';
+                return;
             }
+
+            localStorage.setItem('authToken', response.token);
         }
     } catch (e: any) {
         errorMessage.value = e.message || 'Произошла ошибка. Попробуйте позже';
         
-        if (isWaitingCode.value && e.status === 400) {
+        if (isWaitingCode.value) {
             code.value = '';
         }
     } finally {
@@ -74,10 +94,17 @@ const handleResendCode = async () => {
     isLoading.value = true;
     
     try {
-        await post<LoginResponse>('login', {
+        const response = await post<LoginResponse>('login', {
             login: login.value.trim(),
             password: password.value
         } as LoginRequest);
+        
+        if (response === null) {
+            errorMessage.value = 'Не удалось отправить код повторно';
+        } else {
+            code.value = '';
+            codeComponentKey.value++;
+        }
     } catch (e: any) {
         errorMessage.value = e.message || 'Не удалось отправить код повторно';
     } finally {
@@ -90,8 +117,19 @@ const handleResendCode = async () => {
     <div class="container">
         <p class="title">Страница входа для сотрудника</p>
         <div class="login-form">
-            <Input title="Логин" v-model="login" :disabled="isWaitingCode || isLoading"/>
-            <Input title="Пароль" v-model="password" type="password" :disabled="isWaitingCode || isLoading"/>
+            <Input 
+                title="Логин" 
+                v-model="login" 
+                :disabled="isWaitingCode || isLoading"
+                :error="loginError ? ' ' : undefined"
+            />
+            <Input 
+                title="Пароль" 
+                v-model="password" 
+                type="password" 
+                :disabled="isWaitingCode || isLoading"
+                :error="passwordError ? ' ' : undefined"
+            />
 
             <Transition name="slide-fade">
                 <ErrorBlock v-if="showError" :error="errorMessage || ''"/>
@@ -99,6 +137,7 @@ const handleResendCode = async () => {
 
             <Transition name="slide-fade">
                 <Code 
+                    :key="codeComponentKey"
                     v-if="isWaitingCode" 
                     title="Код для подтверждения входа был отправлен на вашу почту" 
                     v-model="code" 
