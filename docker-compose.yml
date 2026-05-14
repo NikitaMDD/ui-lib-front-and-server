@@ -13,6 +13,11 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: admin123
     networks:
       - web-proj-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
   # Backend Server
   server:
@@ -24,16 +29,22 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - MONGODB_URI=mongodb://admin:admin123@mongodb:27017/mydatabase?authSource=admin
       - PORT=3000
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_PASS=${EMAIL_PASS}
+      - TEST_USER=${TEST_USER:-admin@example.com}
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     networks:
       - web-proj-network
     volumes:
       - ./server:/app
       - /app/node_modules
+      - /app/dist
 
   # Frontend (Vue.js)
   frontend:
