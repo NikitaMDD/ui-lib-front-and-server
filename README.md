@@ -172,3 +172,36 @@ npm run build   # результат в client/dist
 | DELETE | `/api/pet/:id` | Удаление |
 | GET | `/api/calendar?month=YYYY-MM` | Записи календаря привычек за месяц |
 | POST | `/api/calendar` | Создание или обновление записи по дню (`date`, `alcohol`, `cigarettes`, `sugar`) |
+| POST | `/api/login` | Проверка login и password |
+| POST | `/api/verify` | Проверка 4-х значного кода |
+
+--- 
+
+## Создание пользователя для страницы входа для сотрудников
+
+Для начала подключимся к бд
+
+```bash
+
+# Подключение к монго
+docker-compose exec mongodb mongosh -u admin -p admin123 --authenticationDatabase admin
+
+# Вводим и проверяем нет ли пользователя
+show dbs
+use mydatabase
+db.users.find()
+exit
+
+```
+
+Далее создадим пользователя если его нет
+
+```bash
+
+# Открываем shell внутри контейнера с беком
+docker-compose exec server sh
+
+# Внутри запускаем контейнер
+npm run create-test-user
+
+```
