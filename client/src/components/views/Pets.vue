@@ -7,8 +7,8 @@ import Dropdown from "../UI/base/Dropdown.vue";
 import ModalWindow from "../UI/base/ModalWindow.vue";
 import FileLoader from "../UI/base/FileLoader.vue";
 
-import {computed, onMounted, reactive, ref} from "vue";
-import type {FileWithMeta, FormFields, Pet, PetFormData, PetFileApi} from "../../types/pets/types.ts";
+import { computed, onMounted, reactive, ref, watch } from "vue";
+import type { FileWithMeta, FormFields, Pet, PetFormData, PetFileApi } from "../../types/pets/types.ts";
 import { get } from "../../utils/requests/get.ts";
 import { post } from "../../utils/requests/post.ts";
 import { put } from "../../utils/requests/put.ts";
@@ -30,6 +30,22 @@ const formData = reactive<PetFormData>({
 });
 
 const formErrors = reactive<Record<string, string>>({});
+
+const resetForm = () => {
+  Object.assign(formData, {
+    name: '', type: '', dateOfBirth: '', presenceOfAStamp: '',
+    vaccination: '', treatmentForEctoparasites: '', treatmentForHelminths: '',
+    sterilization: '', files: [],
+  });
+  Object.keys(formErrors).forEach(key => delete formErrors[key]);
+  currentEditItem.value = null;
+};
+
+watch(isModalOpen, (isOpen) => {
+  if (!isOpen) {
+    resetForm();
+  }
+});
 
 const validateForm = (): boolean => {
   Object.keys(formErrors).forEach(key => delete formErrors[key]);
@@ -146,12 +162,7 @@ const preparePayload = (formData: PetFormData, dateISO: string) => ({
 });
 
 const openCreateModal = () => {
-  currentEditItem.value = null;
-  Object.assign(formData, {
-    name: '', type: '', dateOfBirth: '', presenceOfAStamp: '',
-    vaccination: '', treatmentForEctoparasites: '', treatmentForHelminths: '',
-    sterilization: '', files: [],
-  });
+  resetForm();
   isModalOpen.value = true;
 };
 
