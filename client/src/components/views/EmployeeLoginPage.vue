@@ -76,6 +76,10 @@ const handleSubmit = async () => {
                 return;
             }
 
+            alert('Выполнен вход');
+
+            isWaitingCode.value = false;
+
             localStorage.setItem('authToken', response.token);
         }
     } catch (e: any) {

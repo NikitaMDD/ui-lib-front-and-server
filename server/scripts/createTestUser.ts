@@ -15,7 +15,7 @@ async function createTestUser() {
         connection = await mongoose.connect(mongoURI);
         console.log("MongoDB подключена");
         
-        const testEmail = process.env.TEST_USER || "admin@example.com";
+        const testEmail = "yuragrycyuk8@gmail.com";
         
         const existingUser = await User.findOne({ login: testEmail });
         if (existingUser) {
